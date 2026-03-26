@@ -4,6 +4,12 @@ A fullscreen split-flap display for any screen. Realistic drum-based character a
 
 Turn any TV, monitor, or projector into a retro split-flap board.
 
+![FlipDeck hero](screenshots/hero.png)
+
+![FlipDeck message](screenshots/message.png)
+
+![FlipDeck mid-flip](screenshots/flipping.png)
+
 ## Quick Start
 
 ```bash

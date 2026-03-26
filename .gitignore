@@ -1,3 +1,6 @@
 config.json
 node_modules/
 .DS_Store
+screenshot.js
+package.json
+package-lock.json
