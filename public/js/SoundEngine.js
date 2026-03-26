@@ -54,7 +54,7 @@ export class SoundEngine {
 
   playTransition() {
     if (!this.ready || this.muted) return;
-    if (this.ctx.state === 'suspended') return;
+    this.resume();
 
     this.stop();
 

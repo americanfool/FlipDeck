@@ -65,15 +65,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Audio init on first real user gesture only
-  let audioInited = false;
-  const initAudio = async () => {
-    if (audioInited) return;
-    audioInited = true;
-    await sound.init();
-    sound.resume();
-    if (!config.sound?.enabled) {
-      sound.muted = true;
-    }
+  let audioInitPromise = null;
+  const initAudio = () => {
+    if (audioInitPromise) return audioInitPromise;
+    audioInitPromise = (async () => {
+      await sound.init();
+      sound.resume();
+      if (!config.sound?.enabled) {
+        sound.muted = true;
+      }
+    })();
+    return audioInitPromise;
   };
   document.addEventListener('click', () => initAudio(), { once: true });
   document.addEventListener('keydown', () => initAudio(), { once: true });
