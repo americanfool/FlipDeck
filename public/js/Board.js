@@ -78,8 +78,16 @@ export class Board {
       return Promise.resolve();
     }
 
-    return Promise.all(flipPromises).then(() => {
+    // Safety timeout — never stay locked for more than 15 seconds
+    const safety = setTimeout(() => {
       this.isTransitioning = false;
+      this.soundEngine?.stop();
+    }, 15000);
+
+    return Promise.all(flipPromises).then(() => {
+      clearTimeout(safety);
+      this.isTransitioning = false;
+      this.soundEngine?.stop();
     });
   }
 

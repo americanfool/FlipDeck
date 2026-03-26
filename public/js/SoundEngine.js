@@ -8,6 +8,7 @@ export class SoundEngine {
     this._audioBuffer = null;
     this._volume = volume;
     this._currentSource = null;
+    this._gainNode = null;
   }
 
   get ready() {
@@ -39,18 +40,23 @@ export class SoundEngine {
 
   toggleMute() {
     this.muted = !this.muted;
+    // Immediately stop current audio when muting
+    if (this.muted) this.stop();
     return this.muted;
   }
 
-  // Play the full transition recording once per message change
+  stop() {
+    if (this._currentSource) {
+      try { this._currentSource.stop(); } catch (_) {}
+      this._currentSource = null;
+    }
+  }
+
   playTransition() {
     if (!this.ready || this.muted) return;
     if (this.ctx.state === 'suspended') return;
 
-    // Stop any currently playing clip
-    if (this._currentSource) {
-      try { this._currentSource.stop(); } catch (_) {}
-    }
+    this.stop();
 
     const source = this.ctx.createBufferSource();
     source.buffer = this._audioBuffer;
@@ -63,6 +69,7 @@ export class SoundEngine {
     source.start(0);
 
     this._currentSource = source;
+    this._gainNode = gain;
     source.onended = () => {
       if (this._currentSource === source) this._currentSource = null;
     };

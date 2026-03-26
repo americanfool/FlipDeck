@@ -49,15 +49,36 @@ function readBody(req) {
   });
 }
 
+// Shuffle array in place (Fisher-Yates)
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // Preset message rotation
+let shuffledOrder = [];
+
+function buildOrder() {
+  shuffledOrder = config.messages.map((_, i) => i);
+  if (config.shuffle) shuffle(shuffledOrder);
+}
+
 function startRotation() {
   if (!config.messages || config.messages.length === 0) return;
+  if (shuffledOrder.length === 0) buildOrder();
 
   function showNext() {
     if (rotationPaused) return;
 
-    const msg = config.messages[rotationIndex % config.messages.length];
-    // Pass through as-is — client handles wrapping
+    if (rotationIndex >= shuffledOrder.length) {
+      rotationIndex = 0;
+      if (config.shuffle) buildOrder();
+    }
+
+    const msg = config.messages[shuffledOrder[rotationIndex]];
     currentMessage = { text: msg.text || '', lines: msg.lines || null };
     broadcast(currentMessage);
 

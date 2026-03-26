@@ -1,10 +1,26 @@
-// Character drum in fixed order — same as a real split-flap display.
-// The drum only spins forward. To reach a character, it advances through
-// every intermediate position, just like mechanical hardware.
 const DRUM_ORDER = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:!?/-\'';
 const DRUM_INDEX = new Map();
 for (let i = 0; i < DRUM_ORDER.length; i++) {
   DRUM_INDEX.set(DRUM_ORDER[i], i);
+}
+
+// Web Worker drives all setTimeout calls — immune to background tab throttling
+const worker = new Worker('js/timer-worker.js');
+const pendingTimers = new Map();
+let _nextId = 1;
+
+worker.onmessage = (e) => {
+  const cb = pendingTimers.get(e.data.id);
+  if (cb) {
+    pendingTimers.delete(e.data.id);
+    cb();
+  }
+};
+
+function reliableTimeout(cb, delay) {
+  const id = _nextId++;
+  pendingTimers.set(id, cb);
+  worker.postMessage({ action: 'set', id, delay });
 }
 
 export class Tile {
@@ -15,7 +31,6 @@ export class Tile {
     this.isAnimating = false;
     this._cancelToken = null;
 
-    // Build DOM
     this.el = document.createElement('div');
     this.el.className = 'tile';
 
@@ -50,36 +65,24 @@ export class Tile {
     return DRUM_ORDER[(idx + 1) % DRUM_ORDER.length];
   }
 
-  /**
-   * Flip to the target character by advancing through every intermediate
-   * position on the drum. Each step is a 3D flip animation.
-   *
-   * @param {string} targetChar - Character to land on
-   * @param {number} delay - ms to wait before starting
-   * @param {number} flipTime - ms per single flip step
-   * @param {function} onFlip - callback fired on each flip (for sound)
-   * @returns {Promise} resolves when done
-   */
-  flipTo(targetChar, delay, flipTime, onFlip) {
+  flipTo(targetChar, delay, flipTime) {
     if (!DRUM_INDEX.has(targetChar)) targetChar = ' ';
     if (targetChar === this.currentChar) return Promise.resolve();
 
-    if (this._cancelToken) {
-      this._cancelToken.cancelled = true;
-    }
+    if (this._cancelToken) this._cancelToken.cancelled = true;
     const token = { cancelled: false };
     this._cancelToken = token;
     this.isAnimating = true;
 
     return new Promise((resolve) => {
-      setTimeout(() => {
+      reliableTimeout(() => {
         if (token.cancelled) { resolve(); return; }
-        this._stepThrough(targetChar, flipTime, onFlip, token, resolve);
+        this._stepThrough(targetChar, flipTime, token, resolve);
       }, delay);
     });
   }
 
-  _stepThrough(targetChar, flipTime, onFlip, token, resolve) {
+  _stepThrough(targetChar, flipTime, token, resolve) {
     if (token.cancelled || this.currentChar === targetChar) {
       this.isAnimating = false;
       this._cancelToken = null;
@@ -89,31 +92,23 @@ export class Tile {
     }
 
     const nextChar = Tile.nextDrumChar(this.currentChar);
-
-    // Set back face to the next character
     this.backSpan.textContent = nextChar === ' ' ? '\u00A0' : nextChar;
 
-    // Trigger CSS flip animation
-    this.innerEl.style.setProperty('--flip-duration', `${flipTime}ms`);
-    this.innerEl.classList.remove('flipping');
-    void this.innerEl.offsetHeight; // force reflow
-    this.innerEl.classList.add('flipping');
+    // JS-driven transform — works in background tabs unlike CSS @keyframes
+    this.innerEl.style.transition = 'none';
+    this.innerEl.style.transform = 'rotateX(0deg)';
+    void this.innerEl.offsetHeight;
+    this.innerEl.style.transition = `transform ${flipTime}ms ease-in-out`;
+    this.innerEl.style.transform = 'rotateX(-180deg)';
 
-    if (onFlip) onFlip();
-
-    // Use setTimeout instead of animationend — more reliable at fast speeds
-    setTimeout(() => {
-      this.innerEl.classList.remove('flipping');
+    reliableTimeout(() => {
+      this.innerEl.style.transition = 'none';
       this.innerEl.style.transform = '';
       this.currentChar = nextChar;
       this.frontSpan.textContent = nextChar === ' ' ? '\u00A0' : nextChar;
       this.backSpan.textContent = '\u00A0';
-
-      // Force reflow before next step
       void this.innerEl.offsetHeight;
-
-      this._stepThrough(targetChar, flipTime, onFlip, token, resolve);
+      this._stepThrough(targetChar, flipTime, token, resolve);
     }, flipTime);
   }
 }
-

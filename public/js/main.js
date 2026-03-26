@@ -102,25 +102,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     return result;
   }
 
-  function processMessage(data) {
-    let lines;
-    if (data.text) {
-      lines = wrapText(data.text, board.cols, board.rows);
-    } else if (data.lines) {
+  let pendingMessage = null;
+
+  function resolveLines(data) {
+    if (data.text) return wrapText(data.text, board.cols, board.rows);
+    if (data.lines) {
       const src = data.lines.map(l => (l || '').toUpperCase());
       if (src.length < board.rows) {
         const padTop = Math.floor((board.rows - src.length) / 2);
-        lines = [];
-        for (let i = 0; i < board.rows; i++) {
-          lines.push(src[i - padTop] || '');
-        }
-      } else {
-        lines = src.slice(0, board.rows);
+        const lines = [];
+        for (let i = 0; i < board.rows; i++) lines.push(src[i - padTop] || '');
+        return lines;
       }
+      return src.slice(0, board.rows);
     }
-    if (lines) {
-      board.displayMessage(lines);
+    return null;
+  }
+
+  function processMessage(data) {
+    const lines = resolveLines(data);
+    if (!lines) return;
+
+    if (board.isTransitioning) {
+      // Queue it — will display when current transition finishes
+      pendingMessage = lines;
+      return;
     }
+
+    board.displayMessage(lines).then(() => {
+      if (pendingMessage) {
+        const next = pendingMessage;
+        pendingMessage = null;
+        processMessage({ lines: next });
+      }
+    });
   }
 
   // SSE connection

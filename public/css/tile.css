@@ -79,29 +79,7 @@
   transition: opacity 0.1s;
 }
 
-/* 3D Flip Animation — one step on the drum */
-.tile-inner.flipping {
-  animation: tileFlip var(--flip-duration, 40ms) ease-in-out forwards;
-}
-
-.tile-inner.flipping .tile-front::before,
-.tile-inner.flipping .tile-back::before {
-  opacity: 1;
-}
-
-@keyframes tileFlip {
-  0% {
-    transform: rotateX(0deg);
-  }
-  50% {
-    transform: rotateX(-90deg);
-  }
-  100% {
-    transform: rotateX(-180deg);
-  }
-}
-
-/* GPU compositing hint during animation only */
-.tile-inner.flipping {
+/* GPU compositing hint during transforms */
+.tile-inner {
   will-change: transform;
 }
