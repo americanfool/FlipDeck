@@ -7,7 +7,7 @@ Turn any TV, monitor, or projector into a retro split-flap board.
 ## Quick Start
 
 ```bash
-git clone https://github.com/blacknight2u/FlipDeck.git
+git clone https://github.com/yourusername/FlipDeck.git
 cd FlipDeck
 cp config.sample.json config.json
 node server.js
