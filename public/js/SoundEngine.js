@@ -46,9 +46,17 @@ export class SoundEngine {
   }
 
   stop() {
-    if (this._currentSource) {
-      try { this._currentSource.stop(); } catch (_) {}
+    if (this._currentSource && this._gainNode) {
+      // Fade out over 150ms to avoid a hard click
+      const now = this.ctx.currentTime;
+      this._gainNode.gain.setValueAtTime(this._gainNode.gain.value, now);
+      this._gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+      const src = this._currentSource;
+      setTimeout(() => {
+        try { src.stop(); } catch (_) {}
+      }, 160);
       this._currentSource = null;
+      this._gainNode = null;
     }
   }
 
@@ -60,6 +68,7 @@ export class SoundEngine {
 
     const source = this.ctx.createBufferSource();
     source.buffer = this._audioBuffer;
+    source.loop = true; // loop so audio never runs out before animation ends
 
     const gain = this.ctx.createGain();
     gain.gain.value = this._volume;

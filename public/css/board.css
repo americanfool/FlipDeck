@@ -1,5 +1,6 @@
 html, body {
   height: 100%;
+  width: 100%;
   overflow: hidden;
   background: #111;
   margin: 0;
@@ -7,13 +8,16 @@ html, body {
 }
 
 #board-container {
-  width: 100vw;
-  height: 100vh;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .board {
   --tile-size: 60px;
   --tile-gap: 4px;
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
@@ -27,4 +31,5 @@ html, body {
   grid-template-columns: repeat(var(--grid-cols), var(--tile-size));
   grid-template-rows: repeat(var(--grid-rows), var(--tile-size));
   gap: var(--tile-gap);
+  contain: layout paint;
 }
