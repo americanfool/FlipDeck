@@ -1,22 +1,13 @@
 {
   "grid": { "tileHeight": 80 },
   "timing": {
+    "flipTimePerChar": 40,
     "staggerDelay": 15,
-    "idleAfterAnimationMs": 10000,
-    "rowBankSize": 4,
-    "rowBankDelay": 28,
-    "rowBankSkew": 4,
-    "colBankSkew": 1
-  },
-  "physics": {
-    "baseFlipTime": 34,
-    "motorStartDelay": 12,
-    "settleTime": 12,
-    "motorVariance": 8
+    "pauseBetweenMessages": 10000
   },
   "sound": {
     "enabled": true,
-    "volume": 1
+    "volume": 0.6
   },
   "shuffle": true,
   "messages": [
